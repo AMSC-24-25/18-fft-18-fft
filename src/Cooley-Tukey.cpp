@@ -10,20 +10,30 @@ std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>>
 int main(){
 
     std::vector<std::complex<double>> x = {std::complex<double>(1,0), std::complex<double>(2,0), std::complex<double>(3,0), std::complex<double>(4,0)};
-    std::vector<std::complex<double>> x2 = {std::complex<double>(1,0), std::complex<double>(4,0), std::complex<double>(237,0), std::complex<double>(3,0)};
+    std::vector<std::complex<double>> x2 = {std::complex<double>(1,0), std::complex<double>(2,0), std::complex<double>(4,0), std::complex<double>(3,0)};
     
+    std::vector<std::complex<double>> y1r = recursive_FF(x);
+    std::vector<std::complex<double>> y2r = recursive_FF(x2);
+    std::vector<std::complex<double>> y1i = iterative_FF(x);
+    std::vector<std::complex<double>> y2i = iterative_FF(x2);
 
-    std::vector<std::complex<double>> y = recursive_FF(x2);
-    std::vector<std::complex<double>> y2 = iterative_FF(x2);
-
-    for(int i = 0; i < y.size(); i++){
-        std::cout << y[i] << std::endl;
+    std::cout << "RECURSIVE-------Vector 1:" << std::endl;
+    for(int i = 0; i < y1r.size(); i++){
+        std::cout << y1r[i] << std::endl;
     }
     std::cout << "----------------Vector 2:" << std::endl;
-    for(int i = 0; i < y2.size(); i++){
-        std::cout << y2[i] << std::endl;
+    for(int i = 0; i < y2r.size(); i++){
+        std::cout << y2r[i] << std::endl;
     }
 
+    std::cout << "ITERATIVE-------Vector 1:" << std::endl;
+    for(int i = 0; i < y1i.size(); i++){
+        std::cout << y1i[i] << std::endl;
+    }
+    std::cout << "----------------Vector 2:" << std::endl;
+    for(int i = 0; i < y1i.size(); i++){
+        std::cout << y2i[i] << std::endl;
+    }
     
     return 0;
 }
@@ -67,9 +77,9 @@ std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>>
     std::vector<std::complex<double>> y(n);
 
     // Bit-reversal permutation
-    for (int i = 0; i < n; ++i) {
+    for (int i = 0; i < n; i++) {
         int j = 0;
-        for (int k = 0; k < m; ++k) {
+        for (int k = 0; k < m; k++) {
             if (i & (1 << k)) {
                 j |= (1 << (m - 1 - k));
             }
@@ -78,20 +88,20 @@ std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>>
     }
 
     // Iterative FFT
-    for (int s = 1; s <= m; ++s) {
-        int m = 1 << s;
-        std::complex<double> wm(std::cos(2 * M_PI / m), std::sin(2 * M_PI / m));
-        for (int k = 0; k < n; k += m) {
-            std::complex<double> w(1, 0);
-            for (int j = 0; j < m / 2; ++j) {
-                std::complex<double> t = w * y[k + j + m / 2];
-                std::complex<double> u = y[k + j];
-                y[k + j] = u + t;
-                y[k + j + m / 2] = u - t;
-                w *= wm;
+    for (int j = 1; j <= m; j++) {
+        int d = 1 << j;            
+        std::complex<double> w(1, 0);
+        std::complex<double> wd(std::cos(2 * M_PI / d), std::sin(2 * M_PI / d));
+        for (int k = 0; k < d/2; k ++) {
+            for (int m = k; m < n; m += d) {
+                std::complex<double> t = w * y[m + d/2];
+                std::complex<double> u = y[k];
+                y[k] = u + t;
+                y[k + d/2] = u - t;
             }
         }
+        w = w * wd;
     }
-
+    
     return y;
 }
