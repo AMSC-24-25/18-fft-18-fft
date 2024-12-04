@@ -5,15 +5,16 @@
 #include <cmath>
 
 std::vector<std::complex<double>> recursive_FF(std::vector<std::complex<double>> x);
+std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>> x);
 
 int main(){
 
     std::vector<std::complex<double>> x = {std::complex<double>(1,0), std::complex<double>(2,0), std::complex<double>(3,0), std::complex<double>(4,0)};
-    std::vector<std::complex<double>> x2 = {std::complex<double>(1,0), std::complex<double>(2,0), std::complex<double>(4,0), std::complex<double>(3,0)};
+    std::vector<std::complex<double>> x2 = {std::complex<double>(1,0), std::complex<double>(4,0), std::complex<double>(237,0), std::complex<double>(3,0)};
     
 
-    std::vector<std::complex<double>> y = recursive_FF(x);
-    std::vector<std::complex<double>> y2 = recursive_FF(x2);
+    std::vector<std::complex<double>> y = recursive_FF(x2);
+    std::vector<std::complex<double>> y2 = iterative_FF(x2);
 
     for(int i = 0; i < y.size(); i++){
         std::cout << y[i] << std::endl;
@@ -58,4 +59,39 @@ std::vector<std::complex<double>> recursive_FF(std::vector<std::complex<double>>
         }
         return y;
     }
+}
+
+std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>> x) {
+    int n = x.size();
+    int m = log2(n);
+    std::vector<std::complex<double>> y(n);
+
+    // Bit-reversal permutation
+    for (int i = 0; i < n; ++i) {
+        int j = 0;
+        for (int k = 0; k < m; ++k) {
+            if (i & (1 << k)) {
+                j |= (1 << (m - 1 - k));
+            }
+        }
+        y[j] = x[i];
+    }
+
+    // Iterative FFT
+    for (int s = 1; s <= m; ++s) {
+        int m = 1 << s;
+        std::complex<double> wm(std::cos(2 * M_PI / m), std::sin(2 * M_PI / m));
+        for (int k = 0; k < n; k += m) {
+            std::complex<double> w(1, 0);
+            for (int j = 0; j < m / 2; ++j) {
+                std::complex<double> t = w * y[k + j + m / 2];
+                std::complex<double> u = y[k + j];
+                y[k + j] = u + t;
+                y[k + j + m / 2] = u - t;
+                w *= wm;
+            }
+        }
+    }
+
+    return y;
 }
