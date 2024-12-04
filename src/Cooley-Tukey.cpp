@@ -29,7 +29,6 @@ int main(){
 
 std::vector<std::complex<double>> recursive_FF(std::vector<std::complex<double>> x){
     if(x.size() == 1){ 
-        //std::cout<<"Caso Base:"<< x[0] <<std::endl;
         return x;
         }
     else{
@@ -37,8 +36,8 @@ std::vector<std::complex<double>> recursive_FF(std::vector<std::complex<double>>
         std::complex<double> wn(std::cos(2 * M_PI / n), std::sin(2 * M_PI / n)) ;
         std::complex<double> w(1,0);
         
-        std::vector<std::complex<double>> x_even(n/2);
-        std::vector<std::complex<double>> x_odd(n/2);
+        std::vector<std::complex<double>> x_even;
+        std::vector<std::complex<double>> x_odd;
         for(int i=0; i < n; i++){
             if(i % 2 == 0){
                 x_even.push_back(x[i]);
@@ -52,7 +51,7 @@ std::vector<std::complex<double>> recursive_FF(std::vector<std::complex<double>>
         std::vector<std::complex<double>> y_odd = recursive_FF(x_odd);
 
         std::vector<std::complex<double>> y(n);
-        for(int i = 0; i < n/2-1; i++){
+        for(int i = 0; i < n/2; i++){
             y[i] = y_even[i] + w * y_odd[i];
             y[i + n/2] = y_even[i] - w * y_odd[i];
             w = w * wn;
