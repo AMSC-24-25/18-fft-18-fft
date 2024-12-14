@@ -42,7 +42,7 @@ std::vector<std::complex<double>> ParallelIterativeFFT::findFFT(std::vector<std:
                 }
             }
         }
-        #pragma omp taskwait
+        //#pragma omp taskwait
     }
     return y;
 };

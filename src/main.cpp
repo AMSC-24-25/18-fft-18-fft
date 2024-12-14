@@ -7,7 +7,7 @@
 #include "../include/Cooley-Tukey-parallel.hpp"
 #include "../include/Cooley-Tukey.hpp"
 
-#define N 4096 // Must be a power of 2
+#define N std::pow(2, 23) // Must be a power of 2
 
 int main(){
     struct timeval t1, t2;
@@ -31,14 +31,14 @@ int main(){
     gettimeofday(&t1, NULL);
     std::vector<std::complex<double>> y1i = SequentialFFTSolver.iterative_FFT(x);
     gettimeofday(&t2, NULL);
-	etimeSeq = (t2.tv_usec - t1.tv_usec);
+	etimeSeq = std::abs(t2.tv_usec - t1.tv_usec);
 	std::cout <<"Not parallel version done, took ->  " << etimeSeq << " usec." << std::endl;
 
     //exec and measure of PARALLEL iterativeFFT    
     gettimeofday(&t1, NULL);
     std::vector<std::complex<double>> y1p = ParallelFFTSolver.findFFT(x);
 	gettimeofday(&t2, NULL);
-	etimePar = (t2.tv_usec - t1.tv_usec);
+    etimePar = std::abs(t2.tv_usec - t1.tv_usec);
 	std::cout <<"Parallel version done, took ->  " << etimePar << " usec." << std::endl;
 
     std::cout<<"The parallel version is "<< etimeSeq/etimePar <<" times faster. "<<std::endl; 
