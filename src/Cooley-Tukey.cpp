@@ -3,28 +3,62 @@
 #include <vector>
 #include <complex>
 #include <cmath>
+#include <ctime>
+#include <sys/time.h>
+#include "../include/Cooley-Tukey-parallel.hpp"
 
 std::vector<std::complex<double>> recursive_FF(std::vector<std::complex<double>> x);
 std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>> x);
 using namespace std;
-int main(){
 
-    std::vector<std::complex<double>> x = {std::complex<double>(1,0), std::complex<double>(2,0), std::complex<double>(4,0), std::complex<double>(3,0)};
+#define N 16
+
+int main(){
+    struct timeval t1, t2;
+    double etime;
+
+    srand(95);
+    std::vector<std::complex<double>> x;
+    for(int i=0; i<N; i++)
+    {
+        x.push_back(std::complex<double>(rand() % RAND_MAX, rand() % RAND_MAX));
+    }
 
     std::vector<std::complex<double>> y1r = recursive_FF(x);
+
+    gettimeofday(&t1, NULL);
     std::vector<std::complex<double>> y1i = iterative_FF(x);
+    gettimeofday(&t2, NULL);
 
-    std::cout << "RECURSIVE-------Vector 1:" << std::endl;
+	etime = (t2.tv_usec - t1.tv_usec);
+
+	std::cout <<"not parallel done, took " << etime << " usec. Verification..." << std::endl;
+
+    ParallelIterativeFFT parallelIterator = ParallelIterativeFFT();
+
+    gettimeofday(&t1, NULL);
+    std::vector<std::complex<double>> y1p = parallelIterator.findFFT(x);
+	gettimeofday(&t2, NULL);
+
+	etime = (t2.tv_usec - t1.tv_usec);
+
+	std::cout <<" parallel done, took " << etime << " usec. Verification..." << std::endl;
+
+    std::cout << "Checking results... " << std::endl;
+    bool check = true;
     for(int i = 0; i < y1r.size(); i++){
-        std::cout << y1r[i] << std::endl;
+        if(y1r[i]!=y1i[i] && y1i[i]!=y1p[i])
+        {
+            std::cout <<"Different result in line " << i << std::endl;
+            check=false;
+        }
     }
 
-    std::cout << "ITERATIVE-------Vector 1:" << std::endl;
-    for(int i = 0; i < y1i.size(); i++){
-        std::cout << y1i[i] << std::endl;
+    if(check)
+    {
+        std::cout <<"Same result for the 3 methods" << std::endl;
     }
 
-    
     return 0;
 }
 
