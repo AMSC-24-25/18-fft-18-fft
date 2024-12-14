@@ -6,34 +6,24 @@
 
 std::vector<std::complex<double>> recursive_FF(std::vector<std::complex<double>> x);
 std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>> x);
-
+using namespace std;
 int main(){
 
-    std::vector<std::complex<double>> x = {std::complex<double>(1,0), std::complex<double>(2,0), std::complex<double>(3,0), std::complex<double>(4,0)};
-    std::vector<std::complex<double>> x2 = {std::complex<double>(1,0), std::complex<double>(2,0), std::complex<double>(4,0), std::complex<double>(3,0)};
-    
+    std::vector<std::complex<double>> x = {std::complex<double>(1,0), std::complex<double>(2,0), std::complex<double>(4,0), std::complex<double>(3,0)};
+
     std::vector<std::complex<double>> y1r = recursive_FF(x);
-    std::vector<std::complex<double>> y2r = recursive_FF(x2);
     std::vector<std::complex<double>> y1i = iterative_FF(x);
-    std::vector<std::complex<double>> y2i = iterative_FF(x2);
 
     std::cout << "RECURSIVE-------Vector 1:" << std::endl;
     for(int i = 0; i < y1r.size(); i++){
         std::cout << y1r[i] << std::endl;
-    }
-    std::cout << "----------------Vector 2:" << std::endl;
-    for(int i = 0; i < y2r.size(); i++){
-        std::cout << y2r[i] << std::endl;
     }
 
     std::cout << "ITERATIVE-------Vector 1:" << std::endl;
     for(int i = 0; i < y1i.size(); i++){
         std::cout << y1i[i] << std::endl;
     }
-    std::cout << "----------------Vector 2:" << std::endl;
-    for(int i = 0; i < y1i.size(); i++){
-        std::cout << y2i[i] << std::endl;
-    }
+
     
     return 0;
 }
@@ -71,8 +61,9 @@ std::vector<std::complex<double>> recursive_FF(std::vector<std::complex<double>>
     }
 }
 
-std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>> x) {
-    int n = x.size();
+
+std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>> input) {
+    int n = input.size();
     int m = log2(n);
     std::vector<std::complex<double>> y(n);
 
@@ -84,23 +75,23 @@ std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>>
                 j |= (1 << (m - 1 - k));
             }
         }
-        y[j] = x[i];
+        y[j] = input[i];
     }
-
     // Iterative FFT
     for (int j = 1; j <= m; j++) {
-        int d = 1 << j;            
+        int d = 1 << j;           
         std::complex<double> w(1, 0);
         std::complex<double> wd(std::cos(2 * M_PI / d), std::sin(2 * M_PI / d));
         for (int k = 0; k < d/2; k ++) {
             for (int m = k; m < n; m += d) {
-                std::complex<double> t = w * y[m + d/2];
-                std::complex<double> u = y[k];
-                y[k] = u + t;
-                y[k + d/2] = u - t;
-            }
-        }
+                std::complex<double> t = w * y[m + d/2];      
+                std::complex<double> x = y[m];
+                y[m] = x + t;
+                y[m + d/2] = x - t;
+                
+            }         
         w = w * wd;
+        }
     }
     
     return y;
