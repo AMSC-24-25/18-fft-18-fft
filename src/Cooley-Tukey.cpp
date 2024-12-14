@@ -75,3 +75,12 @@ std::vector<std::complex<double>> SequentialFFT::iterative_FFT(std::vector<std::
     }
     return y;
 }
+
+std::vector<std::complex<double>> SequentialFFT::iterative_inverse_FFT(std::vector<std::complex<double>> input) {
+    int n = input.size();
+    std::vector<std::complex<double>> y(n);
+    //
+    //TODO
+    //
+    return y;
+}

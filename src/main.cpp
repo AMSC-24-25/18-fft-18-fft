@@ -7,11 +7,11 @@
 #include "../include/Cooley-Tukey-parallel.hpp"
 #include "../include/Cooley-Tukey.hpp"
 
-#define N 16 // Must be a power of 2
+#define N 4096 // Must be a power of 2
 
 int main(){
     struct timeval t1, t2;
-    double etime;
+    double etimePar,etimeSeq;
 
     //Initialize solvers
     ParallelIterativeFFT ParallelFFTSolver = ParallelIterativeFFT();
@@ -31,18 +31,21 @@ int main(){
     gettimeofday(&t1, NULL);
     std::vector<std::complex<double>> y1i = SequentialFFTSolver.iterative_FFT(x);
     gettimeofday(&t2, NULL);
-	etime = (t2.tv_usec - t1.tv_usec);
-	std::cout <<"not parallel done, took " << etime << " usec. Verification..." << std::endl;
+	etimeSeq = (t2.tv_usec - t1.tv_usec);
+	std::cout <<"Not parallel version done, took ->  " << etimeSeq << " usec." << std::endl;
 
     //exec and measure of PARALLEL iterativeFFT    
     gettimeofday(&t1, NULL);
     std::vector<std::complex<double>> y1p = ParallelFFTSolver.findFFT(x);
 	gettimeofday(&t2, NULL);
-	etime = (t2.tv_usec - t1.tv_usec);
-	std::cout <<" parallel done, took " << etime << " usec. Verification..." << std::endl;
+	etimePar = (t2.tv_usec - t1.tv_usec);
+	std::cout <<"Parallel version done, took ->  " << etimePar << " usec." << std::endl;
+
+    std::cout<<"The parallel version is "<< etimeSeq/etimePar <<" times faster. "<<std::endl; 
+
 
     //Checking if the 3 implementations give the same results 
-    std::cout << "Checking results... " << std::endl;
+    std::cout << "\nChecking results... " << std::endl;
     bool check = true;
     for(int i = 0; i < y1r.size(); i++){
         if(y1r[i]!=y1i[i] && y1i[i]!=y1p[i])
