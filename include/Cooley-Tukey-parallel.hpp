@@ -5,8 +5,8 @@
 #include <complex>
 
 class ParallelIterativeFFT {
-public:
-    std::vector<std::complex<double>> findFFT(std::vector<std::complex<double>> input);
+    public:
+        std::vector<std::complex<double>> findFFT(std::vector<std::complex<double>> input);
 };
 
 #endif // COOLEY_TUKEY_PARALLEL_HPP

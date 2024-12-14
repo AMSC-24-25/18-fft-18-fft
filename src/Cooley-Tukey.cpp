@@ -1,4 +1,4 @@
-//#include "../include/Cooley-Tukey.hpp"
+#include "../include/Cooley-Tukey.hpp"
 #include <iostream>
 #include <vector>
 #include <complex>
@@ -7,62 +7,8 @@
 #include <sys/time.h>
 #include "../include/Cooley-Tukey-parallel.hpp"
 
-std::vector<std::complex<double>> recursive_FF(std::vector<std::complex<double>> x);
-std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>> x);
-using namespace std;
 
-#define N 16
-
-int main(){
-    struct timeval t1, t2;
-    double etime;
-
-    srand(95);
-    std::vector<std::complex<double>> x;
-    for(int i=0; i<N; i++)
-    {
-        x.push_back(std::complex<double>(rand() % RAND_MAX, rand() % RAND_MAX));
-    }
-
-    std::vector<std::complex<double>> y1r = recursive_FF(x);
-
-    gettimeofday(&t1, NULL);
-    std::vector<std::complex<double>> y1i = iterative_FF(x);
-    gettimeofday(&t2, NULL);
-
-	etime = (t2.tv_usec - t1.tv_usec);
-
-	std::cout <<"not parallel done, took " << etime << " usec. Verification..." << std::endl;
-
-    ParallelIterativeFFT parallelIterator = ParallelIterativeFFT();
-
-    gettimeofday(&t1, NULL);
-    std::vector<std::complex<double>> y1p = parallelIterator.findFFT(x);
-	gettimeofday(&t2, NULL);
-
-	etime = (t2.tv_usec - t1.tv_usec);
-
-	std::cout <<" parallel done, took " << etime << " usec. Verification..." << std::endl;
-
-    std::cout << "Checking results... " << std::endl;
-    bool check = true;
-    for(int i = 0; i < y1r.size(); i++){
-        if(y1r[i]!=y1i[i] && y1i[i]!=y1p[i])
-        {
-            std::cout <<"Different result in line " << i << std::endl;
-            check=false;
-        }
-    }
-
-    if(check)
-    {
-        std::cout <<"Same result for the 3 methods" << std::endl;
-    }
-
-    return 0;
-}
-
-std::vector<std::complex<double>> recursive_FF(std::vector<std::complex<double>> x){
+std::vector<std::complex<double>> SequentialFFT::recursive_FFT(std::vector<std::complex<double>> x){
     if(x.size() == 1){ 
         return x;
         }
@@ -82,8 +28,8 @@ std::vector<std::complex<double>> recursive_FF(std::vector<std::complex<double>>
             }
         }
 
-        std::vector<std::complex<double>> y_even = recursive_FF(x_even);
-        std::vector<std::complex<double>> y_odd = recursive_FF(x_odd);
+        std::vector<std::complex<double>> y_even = recursive_FFT(x_even);
+        std::vector<std::complex<double>> y_odd = recursive_FFT(x_odd);
 
         std::vector<std::complex<double>> y(n);
         for(int i = 0; i < n/2; i++){
@@ -96,10 +42,10 @@ std::vector<std::complex<double>> recursive_FF(std::vector<std::complex<double>>
 }
 
 
-std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>> input) {
+std::vector<std::complex<double>> SequentialFFT::iterative_FFT(std::vector<std::complex<double>> input) {
     int n = input.size();
     int m = log2(n);
-    std::vector<std::complex<double>> y(n);
+    std::vector<std::complex<double>> y(n); // Must a power of 2
 
     // Bit-reversal permutation
     for (int i = 0; i < n; i++) {
@@ -127,6 +73,5 @@ std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>>
         w = w * wd;
         }
     }
-    
     return y;
 }

@@ -1,9 +1,9 @@
 BIN_DIR=../bin
-PROGRAM1=$(BIN_DIR)/cooley_tukey-co
+PROGRAM1=$(BIN_DIR)/main
 INCLUDE_DIR=../include
 INCLUDES=$(INCLUDE_DIR)/Cooley-Tukey.hpp $(INCLUDE_DIR)/Cooley-Tukey-parallel.hpp
 
-SOURCES=Cooley-Tukey.cpp Cooley-Tukey-parallel.cpp
+SOURCES=Cooley-Tukey.cpp Cooley-Tukey-parallel.cpp main.cpp
 
 CC=g++
 CFLAGS=-O3 -fopenmp
