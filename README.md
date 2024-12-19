@@ -61,23 +61,12 @@ The `main()` function compares the execution of sequential and parallel FFT algo
 
 ---
 
-## CUDA Overview
+## ITERATIVE/PARALLEL Overview
 
-### Kernel Launch Configuration
-
-CUDA kernels are launched using a grid of thread blocks. The configuration is defined by two parameters:
-- **`block_dim`**: Specifies the number of threads in a block.
-- **`grid_size`**: Specifies the number of blocks in the grid.
-
-#### Example Kernel Launch
-```cpp
-parallel_fft<<<dimGrid, dimBlock>>>(a, x, t, log_n);
-```
 
 ### Thread Data Flow
 
 The data flow between threads during FFT computation is illustrated below:
-
 ![FFT Data Flow](https://github.com/user-attachments/assets/228cec06-f8d6-4a67-b224-23871296f993)
 
 Threads exchange data as needed to perform efficient FFT computations while minimizing global memory access.
