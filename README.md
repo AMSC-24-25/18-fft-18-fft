@@ -1,3 +1,7 @@
+Here’s your updated content formatted professionally for GitHub, retaining the structure and details you provided:
+
+---
+
 # Fast Fourier Transform (FFT) Repository
 
 ## Overview
@@ -17,24 +21,71 @@ The repository includes the following implementations:
 ---
 
 ## File Structure
+
 ```plaintext
 /src
-├── Cooley-Tukey.cpp            # Sequential iterative and recursive FFT implementation as object
-├── Cooley-Tukey-parallel.cpp   # Parallel iterative FFT implementation   as object
+├── Cooley-Tukey.cpp            # Sequential iterative and recursive FFT implementation
+├── Cooley-Tukey-parallel.cpp   # Parallel iterative FFT implementation
 ├── cuda.cu                     # CUDA-based parallel FFT implementation
-├── main.cpp                    # Main
-├── Makefile                    # Makefile for compile the entire project
+├── main.cpp                    # Main driver program
+├── Makefile                    # Makefile for building the entire project
 /include
-├── Cooley-Tukey.hpp            # Sequential iterative and recursive FFT header
-├── Cooley-Tukey-parallel.hpp   # Parallel iterative FFT header
+├── Cooley-Tukey.hpp            # Header for sequential FFT
+├── Cooley-Tukey-parallel.hpp   # Header for parallel FFT
 ```
-## How to run
 
-1. Go to /src folder
-2. run ```make``` on th command line
-3. A /bin folder will be created, here you can run the main: ```./main```
+---
 
+## How to Run
 
-## Implementation
-The execution of the main() compares the execution of sequential and parallel FFT algorithm. 
-Two objects are created respectively to solve the FFT. Then the computational time is measured and compares the 2 results.
+1. Navigate to the `/src` folder:
+   ```bash
+   cd src
+   ```
+2. Build the project using the `Makefile`:
+   ```bash
+   make
+   ```
+3. After compilation, a `/bin` folder will be created. Run the main executable:
+   ```bash
+   ./main
+   ```
+
+---
+
+## Implementation Details
+
+The `main()` function compares the execution of sequential and parallel FFT algorithms.  
+- Two objects are created to execute the FFT using different approaches.
+- The computational time for both methods is measured and their performance is compared.
+
+---
+
+## CUDA Overview
+
+### Kernel Launch Configuration
+
+CUDA kernels are launched using a grid of thread blocks. The configuration is defined by two parameters:
+- **`block_dim`**: Specifies the number of threads in a block.
+- **`grid_size`**: Specifies the number of blocks in the grid.
+
+#### Example Kernel Launch
+```cpp
+parallel_fft<<<dimGrid, dimBlock>>>(a, x, t, log_n);
+```
+
+### Thread Data Flow
+
+The data flow between threads during FFT computation is illustrated below:
+
+![FFT Data Flow](https://github.com/user-attachments/assets/228cec06-f8d6-4a67-b224-23871296f993)
+
+Threads exchange data as needed to perform efficient FFT computations while minimizing global memory access.
+
+### Thread Computation
+
+Each thread computes part of the FFT independently. The process is depicted below:
+
+![Thread Computation](https://github.com/user-attachments/assets/65ecc3f7-051f-4c67-93bb-740e85ce6cc6)
+
+---
