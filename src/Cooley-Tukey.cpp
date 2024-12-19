@@ -78,9 +78,45 @@ std::vector<std::complex<double>> SequentialFFT::iterative_FFT(std::vector<std::
 
 std::vector<std::complex<double>> SequentialFFT::iterative_inverse_FFT(std::vector<std::complex<double>> input) {
     int n = input.size();
-    std::vector<std::complex<double>> y(n);
-    //
-    //TODO
-    //
+    int m = log2(n);
+    std::vector<std::complex<double>> y(n); // Must be a power of 2
+
+    // Conjugate the input (for inverse FFT)
+    for (int i = 0; i < n; i++) {
+        input[i] = std::conj(input[i]);
+    }
+
+    // Bit-reversal permutation
+    for (int i = 0; i < n; i++) {
+        int j = 0;
+        for (int k = 0; k < m; k++) {
+            if (i & (1 << k)) {
+                j |= (1 << (m - 1 - k));
+            }
+        }
+        y[j] = input[i];
+    }
+
+    // Iterative FFT (same as forward FFT but with conjugated roots of unity)
+    for (int j = 1; j <= m; j++) {
+        int d = 1 << j;
+        std::complex<double> w(1, 0);
+        std::complex<double> wd(std::cos(2 * M_PI / d), std::sin(2 * M_PI / d)); // Conjugate of forward FFT
+        for (int k = 0; k < d / 2; k++) {
+            for (int m = k; m < n; m += d) {
+                std::complex<double> t = w * y[m + d / 2];
+                std::complex<double> x = y[m];
+                y[m] = x + t;
+                y[m + d / 2] = x - t;
+            }
+            w = w * wd;
+        }
+    }
+
+    // Conjugate the output and divide by n
+    for (int i = 0; i < n; i++) {
+        y[i] = std::conj(y[i]) / static_cast<double>(n);
+    }
+
     return y;
 }
