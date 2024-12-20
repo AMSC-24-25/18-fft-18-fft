@@ -7,7 +7,7 @@
 #include "../include/Cooley-Tukey-parallel.hpp"
 #include "../include/Cooley-Tukey.hpp"
 
-#define N std::pow(2, 23) // Must be a power of 2
+#define N std::pow(2, 15) // Must be a power of 2
 
 int main(){
     struct timeval t1, t2;
@@ -19,36 +19,42 @@ int main(){
 
     //creating a random input vector
     srand(95);
-    std::vector<std::complex<double>> x;
+    std::vector<std::complex<double>>input_vector;
     for(int i=0; i<N; i++)
     {
-        x.push_back(std::complex<double>(rand() % RAND_MAX, rand() % RAND_MAX));
+       input_vector.push_back(std::complex<double>(rand() % RAND_MAX, rand() % RAND_MAX));
     }
 
-    std::vector<std::complex<double>> y1r = SequentialFFTSolver.recursive_FFT(x);
+    std::vector<std::complex<double>> recursiveResult = SequentialFFTSolver.recursive_FFT(input_vector);
 
     //exec and measure of SEQUENTIAL iterativeFFT
     gettimeofday(&t1, NULL);
-    std::vector<std::complex<double>> y1i = SequentialFFTSolver.iterative_FFT(x);
+    std::vector<std::complex<double>> iterativeResult = SequentialFFTSolver.iterative_FFT(input_vector);
     gettimeofday(&t2, NULL);
 	etimeSeq = std::abs(t2.tv_usec - t1.tv_usec);
-	std::cout <<"Not parallel version done, took ->  " << etimeSeq << " usec." << std::endl;
+	std::cout <<"Sequential version done, took ->  " << etimeSeq << " usec." << std::endl;
 
     //exec and measure of PARALLEL iterativeFFT    
     gettimeofday(&t1, NULL);
-    std::vector<std::complex<double>> y1p = ParallelFFTSolver.findFFT(x);
+    std::vector<std::complex<double>> parallelResult = ParallelFFTSolver.findFFT(input_vector);
 	gettimeofday(&t2, NULL);
     etimePar = std::abs(t2.tv_usec - t1.tv_usec);
 	std::cout <<"Parallel version done, took ->  " << etimePar << " usec." << std::endl;
 
     std::cout<<"The parallel version is "<< etimeSeq/etimePar <<" times faster. "<<std::endl; 
 
+    //exec and measure SEQUENTIAL INVERSE iterativeFFT
+    gettimeofday(&t1, NULL);
+    std::vector<std::complex<double>> iterativeInverseResult = SequentialFFTSolver.iterative_inverse_FFT(input_vector);
+	gettimeofday(&t2, NULL);
+    etimePar = std::abs(t2.tv_usec - t1.tv_usec);
+	std::cout <<"Inverse iterative version done, took ->  " << etimePar << " usec." << std::endl;
 
     //Checking if the 3 implementations give the same results 
     std::cout << "\nChecking results... " << std::endl;
     bool check = true;
-    for(int i = 0; i < y1r.size(); i++){
-        if(y1r[i]!=y1i[i] && y1i[i]!=y1p[i])
+    for(int i = 0; i < recursiveResult.size(); i++){
+        if(recursiveResult[i]!=iterativeResult[i] && iterativeResult[i]!=parallelResult[i])
         {
             std::cout <<"Different result in line " << i << std::endl;
             check=false;
