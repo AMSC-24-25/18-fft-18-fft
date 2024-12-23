@@ -1,92 +1,60 @@
-//#include "../include/Cooley-Tukey.hpp"
-#include <iostream>
-#include <vector>
-#include <complex>
-#include <cmath>
-#include <cuComplex.h>
-#define N 4
-std::vector<std::complex<double>> recursive_FF(std::vector<std::complex<double>> x);
-std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>> x);
-std::vector<std::complex<double>> permutation(std::vector<std::complex<double>> input);
-using namespace std;
+#include "../include/Cooley-Tukey-CUDA.hpp"
 
 
-// Function to compute wd^h where wd is e^(2πi/d) and h is a complex number
-__host__ __device__ cuDoubleComplex compute_wd_pow_h(int d, cuDoubleComplex h) {
-    // Extract real and imaginary parts of h
-    double real_h = cuCreal(h);
-    double imag_h = cuCimag(h);
 
-    // Calculate the argument of wd, which is 2π/d
-    double angle = 2 * M_PI / d;
 
-    // Compute wd^h = exp(h * ln(wd)), where ln(wd) = i * 2π/d
-    double real_part = imag_h * angle;  // This is the imaginary part of the exponent
-    double imag_part = real_h * angle;  // This is the real part of the exponent
-
-    // Compute the result as e^(i * (real_part + imag_part)), which is cos(imag_part) + i * sin(imag_part)
-    return make_cuDoubleComplex(cos(imag_part), sin(imag_part));
-}
 
 __global__ void parallel_fft(cuDoubleComplex *y, cuDoubleComplex *x, cuDoubleComplex *t, int log_n ){
     int d;
-    unsigned int t_y = blockIdx.y * blockDim.y + threadIdx.y;
-    bool up_down; // up = 1 down = 0 ( if down it will write on x otherwise it will write on t)
-    int tmp_index;
-    int p;
+    unsigned int t_x = blockIdx.x * blockDim.x + threadIdx.x;
+    int flag_block_index = 1;
+    int element_thread_computation;
+    
     for(int j= 1; j<=log_n; j++){
         d = 1 << j;
-        if( (t_y % d ) < d/2 ) {up_down = 0;}
-        else up_down = 1;
-        
-
-        // DOWN CASE
-        if( ! up_down ) {
-            tmp_index = t_y + d/2;
-            //printf("Thread n: %d, Iteration : %d => up_down = %d, index_of_writing : %d\n",t_y, j ,up_down, tmp_index);
-            x[tmp_index] = y[t_y];
-            x[t_y] = y[t_y];
+        if( d <= THREAD_PER_BLOCK ){
+            thread_computation(t_x, d, y, x, t);
         }
-        //UP CASE
-        else{
-            tmp_index = t_y - d/2;
-            //printf("Thread n: %d, Iteration : %d => up_down = %d, index_of_writing : %d\n",t_y, j ,up_down, tmp_index);
-            p = (int)(tmp_index % d);
-            cuDoubleComplex w = compute_wd_pow_h(d, make_cuDoubleComplex(static_cast<double>(p), 0.0));
-            t[tmp_index] = cuCmul(y[t_y], w);
-            t[t_y] = cuCmul(y[t_y], w);;
+        else {
+            flag_block_index *= 2;
+            if(blockIdx.x % flag_block_index == 0 ){
+                for(int i = 0; i < flag_block_index; i++ ){
+                    element_thread_computation = t_x + blockDim.x * i ;
+                    write_thread_computation(element_thread_computation, d, y, x, t);
+                }
+                __syncthreads();
+                for(int i = 0; i < flag_block_index; i++ ){
+                    element_thread_computation = t_x + blockDim.x * i ;
+                    sum_thread_computation(element_thread_computation,d,y,x,t);
+                }
+                __syncthreads();
+            }else{
+                return;
+            }
         }
 
-     __syncthreads();
-     if(t_y % d < d/2 ) {
-        y[t_y] =  cuCadd(x[t_y],t[t_y] );
-     }else{
-        y[t_y] = cuCsub(x[t_y],t[t_y] );
-     }
-      __syncthreads();
     }
+        
 }
-
-
 
 
 int main(){
 
-    std::vector<std::complex<double>> input = {std::complex<double>(1,0), std::complex<double>(2,0), std::complex<double>(4,0), std::complex<double>(3,0)
-                                                , std::complex<double>(1,0), std::complex<double>(2,0), std::complex<double>(4,0), std::complex<double>(3,0)};
-    std::vector<std::complex<double>> y1r = recursive_FF(input);
-    std::vector<std::complex<double>> y1i = iterative_FF(input);
+    srand(95);
+    std::vector<std::complex<double>> input;
+    for(int i = 0; i < N; i++) {
+        // Generate random numbers between -1.0 and 1.0
+        double real_part = (rand() % (RAND_MAX )) / static_cast<double>(RAND_MAX) * 2.0 - 1.0;
+        double imag_part = (rand() % (RAND_MAX )) / static_cast<double>(RAND_MAX) * 2.0 - 1.0;
+        input.push_back(std::complex<double>(real_part, imag_part));
+    }
+
+    int grid_size = input.size() / THREAD_PER_BLOCK;
+    if(input.size() % THREAD_PER_BLOCK != 0) grid_size ++ ;
+
+    std::vector<std::complex<double>> output_iterative = iterative_FF(input);
    
 
-    std::cout << "RECURSIVE-------Vector 1:" << std::endl;
-    for(int i = 0; i < y1r.size(); i++){
-        std::cout << y1r[i] << std::endl;
-    }
-
-    std::cout << "ITERATIVE-------Vector 1:" << std::endl;
-    for(int i = 0; i < y1i.size(); i++){
-        std::cout << y1i[i] << std::endl;
-    }
 
     input = permutation(input);
 
@@ -94,116 +62,33 @@ int main(){
     cuDoubleComplex *y; //permutation for GPU
     cuDoubleComplex *x;  
     cuDoubleComplex *t;
-    cuDoubleComplex *sum;
 
-    cudaMallocManaged((void **)&a, sizeof(cuDoubleComplex) *  input.size());
-    cudaMallocManaged((void **)&y, sizeof(cuDoubleComplex) *  input.size());
-    cudaMallocManaged((void **)&x, sizeof(cuDoubleComplex) *  input.size());
-    cudaMallocManaged((void **)&t, sizeof(cuDoubleComplex) *  input.size());
+    cudaMallocManaged((void **)&a, sizeof(cuDoubleComplex) *  ( THREAD_PER_BLOCK * grid_size ));
+    cudaMallocManaged((void **)&y, sizeof(cuDoubleComplex) *  ( THREAD_PER_BLOCK * grid_size ));
+    cudaMallocManaged((void **)&x, sizeof(cuDoubleComplex) *  ( THREAD_PER_BLOCK * grid_size ));
+    cudaMallocManaged((void **)&t, sizeof(cuDoubleComplex) *  ( THREAD_PER_BLOCK * grid_size ));
 
-     // Copy data from std::complex to cuDoubleComplex
-    for (size_t i = 0; i < input.size(); ++i) {
-        a[i] = make_cuDoubleComplex(input[i].real(), input[i].imag());
+    // Copy data from std::complex to cuDoubleComplex
+    for (size_t i = 0; i < ( THREAD_PER_BLOCK * grid_size ); ++i) {
+        if(i < input.size())  a[i] = make_cuDoubleComplex(input[i].real(), input[i].imag());
+        else a[i] = make_cuDoubleComplex(0,0);
     }
-
-    dim3 dimGrid(1, 1);   // 40 columns, 2 rows
-    dim3 dimBlock(1, input.size()); // 1 column, 32 rows
+    cout << "grid size : " << grid_size << endl;
+    cout << "Thread x Block " << THREAD_PER_BLOCK << endl;
+    dim3 dimGrid(grid_size);   // 40 columns, 2 rows dsfsdf
+    dim3 dimBlock(THREAD_PER_BLOCK); // 1 column, 32 rows
     int log_n = (int)(log(input.size()) / log(2)); // This will correctly return 2
     parallel_fft<<<dimGrid,dimBlock>>>(a,x,t,log_n);
     cudaDeviceSynchronize();
 
-    std::cout << "PARALLEL-------Vector 1:" << std::endl;
-    for (int i = 0; i < input.size(); i++) {
-        std::cout << "(" << cuCreal(a[i]) << ", " << cuCimag(a[i]) << ")" << std::endl;
-    }
+ 
+
+
+
+    std::vector<std::complex<double>> cuda_output_vector = cuDoubleComplexToVector(a,input.size());
+    compareComplexVectors(output_iterative,cuda_output_vector);    
 
 
     
     return 0;
-}
-std::vector<std::complex<double>> permutation(std::vector<std::complex<double>> input) {
-    int n = input.size();
-    int m = log2(n);
-    std::vector<std::complex<double>> y(n);
-
-    // Bit-reversal permutation
-    for (int i = 0; i < n; i++) {
-        int j = 0;
-        for (int k = 0; k < m; k++) {
-            if (i & (1 << k)) {
-                j |= (1 << (m - 1 - k));
-            }
-        }
-        y[j] = input[i];
-    }
-
-    return y;
-}
-
-std::vector<std::complex<double>> recursive_FF(std::vector<std::complex<double>> x){
-    if(x.size() == 1){ 
-        return x;
-        }
-    else{
-        int n = x.size();
-        std::complex<double> wn(std::cos(2 * M_PI / n), std::sin(2 * M_PI / n)) ;
-        std::complex<double> w(1,0);
-        
-        std::vector<std::complex<double>> x_even;
-        std::vector<std::complex<double>> x_odd;
-        for(int i=0; i < n; i++){
-            if(i % 2 == 0){
-                x_even.push_back(x[i]);
-            }
-            else{
-                x_odd.push_back(x[i]);
-            }
-        }
-
-        std::vector<std::complex<double>> y_even = recursive_FF(x_even);
-        std::vector<std::complex<double>> y_odd = recursive_FF(x_odd);
-
-        std::vector<std::complex<double>> y(n);
-        for(int i = 0; i < n/2; i++){
-            y[i] = y_even[i] + w * y_odd[i];
-            y[i + n/2] = y_even[i] - w * y_odd[i];
-            w = w * wn;
-        }
-        return y;
-    }
-}
-
-std::vector<std::complex<double>> iterative_FF(std::vector<std::complex<double>> input) {
-    int n = input.size();
-    int m = log2(n);
-    std::vector<std::complex<double>> y(n);
-
-    // Bit-reversal permutation
-    for (int i = 0; i < n; i++) {
-        int j = 0;
-        for (int k = 0; k < m; k++) {
-            if (i & (1 << k)) {
-                j |= (1 << (m - 1 - k));
-            }
-        }
-        y[j] = input[i];
-    }
-    // Iterative FFT
-    for (int j = 1; j <= m; j++) {
-        int d = 1 << j;           
-        std::complex<double> w(1, 0);
-        std::complex<double> wd(std::cos(2 * M_PI / d), std::sin(2 * M_PI / d));
-        for (int k = 0; k < d/2; k ++) {
-            for (int m = k; m < n; m += d) {
-                std::complex<double> t = w * y[m + d/2];      
-                std::complex<double> x = y[m];
-                y[m] = x + t;
-                y[m + d/2] = x - t;
-                
-            }         
-        w = w * wd;
-        }
-    }
-    
-    return y;
 }

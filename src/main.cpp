@@ -8,7 +8,7 @@
 #include "../include/Cooley-Tukey.hpp"
 
 #define N std::pow(2, 15) // Must be a power of 2
-
+using namespace std;
 int main(){
     struct timeval t1, t2;
     double etimePar,etimeSeq;
@@ -49,6 +49,28 @@ int main(){
 	gettimeofday(&t2, NULL);
     etimePar = std::abs(t2.tv_usec - t1.tv_usec);
 	std::cout <<"Inverse iterative version done, took ->  " << etimePar << " usec." << std::endl;
+    
+/*
+  double tolerance = 1e-9; // Define an acceptable tolerance
+    bool inverseCheck = true;
+    for (int i = 0; i < input_vector.size(); i++) {
+        if (std::abs(input_vector[i] - iterativeInverseResult[i]) > tolerance) {
+            cout << "Inverse Error at index: " << i 
+                << " | Original: " << input_vector[i]
+                << " | Inverse: " << iterativeInverseResult[i] << endl;
+            inverseCheck = false;
+        }
+    }
+
+    if (inverseCheck) {
+        cout << "Inverse FFT validation successful!" << endl;
+    } else {
+        cout << "Inverse FFT validation failed!" << endl;
+    }
+
+*/
+  
+
 
     //Checking if the 3 implementations give the same results 
     std::cout << "\nChecking results... " << std::endl;

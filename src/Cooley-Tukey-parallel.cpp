@@ -5,6 +5,7 @@
 #include <omp.h>
 #include "../include/Cooley-Tukey-parallel.hpp"
 
+
 std::vector<std::complex<double>> ParallelIterativeFFT::findFFT(std::vector<std::complex<double>> input){
     int n = input.size();
     int m = log2(n);
